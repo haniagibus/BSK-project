@@ -98,7 +98,7 @@ public class pdfSignerGUI {
         // wybór pliku
         browseButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Pliki PDF", "pdf"));
             if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
                 filePathField.setText(selectedFile.getAbsolutePath());

@@ -77,7 +77,7 @@ public class KeyGeneratorGUI {
                 if (!pin.isEmpty()) {
                     try {
                         keyGenerator.generateKeys(pin);
-                        statusText.setText("Klucze zostały wygenerowane! #wow #slay #YASSSQUEEN");
+                        statusText.setText("Klucze zostały wygenerowane! ");
                     } catch (Exception ex) {
                         statusText.setText("Wystąpił błąd: " + ex.getMessage());
                     }

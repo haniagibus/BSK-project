@@ -3,7 +3,6 @@ package org.example;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.Scanner;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -14,16 +13,12 @@ import java.security.MessageDigest;
 public class KeyGenerator {
 
     private static final int RSA_KEY_SIZE = 4096;
-    private static final String PENDRIVE_PATH = "C:/pendrive/";
+    private static final String PENDRIVE_PATH = "D:/";
 
-    public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("insert PIN: ");
-        String pin = scanner.nextLine();
-        scanner.close();
+    public void generateKeys(String PIN) throws Exception {
 
         KeyPair keyPair = generateRSAKeyPair();
-        String encryptedPrivateKey = encryptPrivateKey(keyPair.getPrivate(), pin);
+        String encryptedPrivateKey = encryptPrivateKey(keyPair.getPrivate(), PIN);
 
         saveToFile(PENDRIVE_PATH + "private_key.enc", encryptedPrivateKey);
         saveToFile("public_key.pem", Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
@@ -31,7 +26,7 @@ public class KeyGenerator {
         System.out.println("RSA keys generated");
     }
 
-    private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
+    public KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(RSA_KEY_SIZE);
         return keyGen.generateKeyPair();

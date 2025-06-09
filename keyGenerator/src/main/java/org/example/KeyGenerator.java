@@ -13,18 +13,34 @@ import java.security.MessageDigest;
 public class KeyGenerator {
 
     private static final int RSA_KEY_SIZE = 4096;
-    private static final String PENDRIVE_PATH = "D:/";
+
+    private static File detectPendriveRoot() {
+        File[] roots = File.listRoots();
+        for (File root : roots) {
+            String path = root.getAbsolutePath().toUpperCase();
+            if (!path.startsWith("C") && root.canWrite()) {
+                return root;
+            }
+        }
+        return null;
+    }
 
     public void generateKeys(String PIN) throws Exception {
+        File pendriveRoot = detectPendriveRoot();
+        if (pendriveRoot == null) {
+            System.out.println("Pendrive not found");
+            return;
+        }
 
         KeyPair keyPair = generateRSAKeyPair();
         String encryptedPrivateKey = encryptPrivateKey(keyPair.getPrivate(), PIN);
 
-        saveToFile(PENDRIVE_PATH + "private_key.enc", encryptedPrivateKey);
+        saveToFile(new File(pendriveRoot, "private_key.enc").getAbsolutePath(), encryptedPrivateKey);
         saveToFile("public_key.pem", Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
 
-        System.out.println("RSA keys generated");
+        System.out.println("RSA keys generated and saved to: " + pendriveRoot.getAbsolutePath());
     }
+
 
     public KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");

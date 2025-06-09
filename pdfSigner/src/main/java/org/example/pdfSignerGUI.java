@@ -1,11 +1,21 @@
 package org.example;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 public class pdfSignerGUI {
 
@@ -144,12 +154,68 @@ public class pdfSignerGUI {
     }
 
     private static boolean signPDF(String filePath, String pin) {
-        // TODO
-        return true;
+        try {
+            File encryptedKeyFile = findEncryptedPrivateKey();
+            if (encryptedKeyFile == null) {
+                System.out.println("Nie znaleziono klucza prywatnego na pendrive.");
+                return false;
+            }
+            if (!encryptedKeyFile.exists()) return false;
+            byte[] encryptedPrivateKey = Files.readAllBytes(encryptedKeyFile.toPath());
+
+            MessageDigest sha = MessageDigest.getInstance("SHA-256");
+            SecretKey aesKey = new SecretKeySpec(sha.digest(pin.getBytes(StandardCharsets.UTF_8)), "AES");
+            Cipher aesCipher = Cipher.getInstance("AES");
+            aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
+            byte[] privateKeyBytes = aesCipher.doFinal(Base64.getDecoder().decode(encryptedPrivateKey));
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+            PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+
+            byte[] pdfData = Files.readAllBytes(Paths.get(filePath));
+            byte[] pdfHash = MessageDigest.getInstance("SHA-256").digest(pdfData);
+
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign(privateKey);
+            signature.update(pdfHash);
+            byte[] digitalSignature = signature.sign();
+
+            Files.write(Paths.get(filePath + ".sig"), digitalSignature);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
+
     private static boolean verifyPDFSignature(String filePath) {
-        // TODO
-        return true;
+        try {
+            byte[] pubBytes = Base64.getDecoder().decode(Files.readString(Paths.get("../KeyGenerator/public_key.pem")));
+            X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubBytes);
+            PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(pubKeySpec);
+
+            byte[] pdfData = Files.readAllBytes(Paths.get(filePath));
+            byte[] pdfHash = MessageDigest.getInstance("SHA-256").digest(pdfData);
+            byte[] signatureBytes = Files.readAllBytes(Paths.get(filePath + ".sig"));
+
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initVerify(publicKey);
+            signature.update(pdfHash);
+            return signature.verify(signatureBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static File findEncryptedPrivateKey() {
+        File[] roots = File.listRoots();
+        for (File root : roots) {
+            File keyFile = new File(root, "private_key.enc");
+            if (keyFile.exists()) {
+                return keyFile;
+            }
+        }
+        return null;
     }
 }

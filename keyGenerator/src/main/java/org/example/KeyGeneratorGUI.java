@@ -62,7 +62,7 @@ public class KeyGeneratorGUI {
      * @see #setupButtonActionListener(JButton, JTextField, JLabel)
      */
     public static void createAndShowGUI() {
-        JFrame frame = new JFrame("Generowanie Kluczy RSA");
+        JFrame frame = new JFrame("BSK - KeyGenerator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
